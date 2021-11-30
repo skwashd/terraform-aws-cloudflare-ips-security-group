@@ -1,6 +1,6 @@
 # Cloudflare Source IPs AWS Security Group Ingress
 <!-- BEGIN_TF_DOCS -->
-Module populates an AWS security group ingress rules with Cloudflare source IPs. By default module only allows access for 443/tcp (https), but additional ports can be added.
+This terraform module populates an AWS security group ingress rules with Cloudflare source IPs. By default module only allows access for 443/tcp (https), but additional ports can be added.
 
 The Cloudflare provider requires an API. The IP lookup doesn't use the token to featch the values. Using `export CLOUDFLARE_API_TOKEN="YQSn-xWAQiiEh9qM58wZNnyQS7FUdoqGIUAbrh7T"` works. This invalid token that passes validation [lifted from Cloudflare docs](https://developers.cloudflare.com/api/).
 
@@ -11,15 +11,15 @@ The Cloudflare provider requires an API. The IP lookup doesn't use the token to 
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.0.0 |
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~> 3.65.0 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~> 3.67.0 |
 | <a name="requirement_cloudflare"></a> [cloudflare](#requirement\_cloudflare) | ~> 3.4.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | 3.65.0 |
-| <a name="provider_cloudflare"></a> [cloudflare](#provider\_cloudflare) | 3.4.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | ~> 3.67.0 |
+| <a name="provider_cloudflare"></a> [cloudflare](#provider\_cloudflare) | ~> 3.4.0 |
 
 ## Inputs
 
