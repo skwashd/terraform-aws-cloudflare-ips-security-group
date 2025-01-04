@@ -1,8 +1,47 @@
 # Cloudflare Source IPs AWS Security Group Ingress
-<!-- BEGIN_TF_DOCS -->
+
 This terraform module populates an AWS security group ingress rules with Cloudflare source IPs. By default module only allows access for 443/tcp (https), but additional ports can be added.
 
-The Cloudflare provider requires an API. The IP lookup doesn't use the token to featch the values. Using `export CLOUDFLARE_API_TOKEN="YQSn-xWAQiiEh9qM58wZNnyQS7FUdoqGIUAbrh7T"` works. This invalid token that passes validation [lifted from Cloudflare docs](https://developers.cloudflare.com/api/).
+## Example
+
+To include this model in your project you can use the following definition:
+
+```hcl2
+module "cloudflare_ips" {
+  source  = "skwashd/cloudflare-ips-security-group/aws"
+  version = "1.1.0"
+
+  vpc_id = aws_vpc.id
+
+  tags = var.tags
+}
+
+# ...
+
+resource "aws_lb" "my_app" {
+  name = "app-${var.tags["Environment"]}"
+
+  load_balancer_type = "application"
+  security_groups    = [module.cloudflare_ips.security_group.id, aws_security_group.alb.id] # etc
+
+  # ...
+}
+```
+
+This will create the security group and attach it to your load balancer.
+
+## API Token
+
+The Cloudflare provider requires an API token. 
+
+If you already use the Cloudflare provider in your project, you don't need to do anything. Your existing token will work.
+
+If you only need to fetch the IPs, then you don't need to generate a real token. The IP lookup doesn't use the token to fetch the values. In your pipeline set the `CLOUDFLARE_API_TOKEN` using `export CLOUDFLARE_API_TOKEN="YQSn-xWAQiiEh9qM58wZNnyQS7FUdoqGIUAbrh7T"` or the equivelant in your deployment tool of choice. This invalid token that passes validation [lifted from Cloudflare docs](https://developers.cloudflare.com/api/).
+
+## Generated Docs
+
+<!-- BEGIN_TF_DOCS -->
+
 
 ----
 
@@ -10,16 +49,16 @@ The Cloudflare provider requires an API. The IP lookup doesn't use the token to 
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.0.0 |
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~> 3.67.0 |
-| <a name="requirement_cloudflare"></a> [cloudflare](#requirement\_cloudflare) | ~> 3.4.0 |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.0.0, < 2.0.0 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 5.0.0, < 6.0.0 |
+| <a name="requirement_cloudflare"></a> [cloudflare](#requirement\_cloudflare) | >= 4.0.0, < 5.0.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | ~> 3.67.0 |
-| <a name="provider_cloudflare"></a> [cloudflare](#provider\_cloudflare) | ~> 3.4.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 5.0.0, < 6.0.0 |
+| <a name="provider_cloudflare"></a> [cloudflare](#provider\_cloudflare) | >= 4.0.0, < 5.0.0 |
 
 ## Inputs
 
@@ -45,6 +84,6 @@ No modules.
 | Name | Type |
 |------|------|
 | [aws_security_group.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group) | resource |
-| [aws_security_group_rule.ingress_tcp](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group_rule) | resource |
+| [aws_vpc_security_group_ingress_rule.ingress_tcp](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc_security_group_ingress_rule) | resource |
 | [cloudflare_ip_ranges.cloudflare](https://registry.terraform.io/providers/cloudflare/cloudflare/latest/docs/data-sources/ip_ranges) | data source |
 <!-- END_TF_DOCS -->
