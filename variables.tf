@@ -23,5 +23,5 @@ variable "vpc_id" {
 
 locals {
   name  = var.name == "" ? "CloudflareIngress-${var.vpc_id}" : var.name
-  ports = toset(length(var.additional_ports) == 0 ? ["443"] : "${concat(["443"], var.additional_ports)}")
+  ports = toset(length(var.additional_ports) == 0 ? ["443"] : concat(["443"], var.additional_ports))
 }
