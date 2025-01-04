@@ -11,16 +11,28 @@ resource "aws_security_group" "this" {
   )
 }
 
-resource "aws_vpc_security_group_ingress_rule" "ingress_tcp" {
-  for_each = local.ports
+resource "aws_vpc_security_group_ingress_rule" "ingress_tcp_ipv4" {
+  for_each = local.ipv4_rules
 
   security_group_id = aws_security_group.this.id
-  description       = "Allow ingress from Cloudflare on port ${each.key}"
+  description       = each.value.description
 
-  cidr_ipv4 = toset(data.cloudflare_ip_ranges.cloudflare.ipv4_cidr_blocks)
-  cidr_ipv6 = toset(data.cloudflare_ip_ranges.cloudflare.ipv6_cidr_blocks)
+  cidr_ipv4 = each.value.cidr
 
   ip_protocol = "tcp"
-  from_port   = each.key
-  to_port     = each.key
+  from_port   = each.value.port
+  to_port     = each.value.port
+}
+
+resource "aws_vpc_security_group_ingress_rule" "ingress_tcp_ipv6" {
+  for_each = local.ipv6_rules
+
+  security_group_id = aws_security_group.this.id
+  description       = each.value.description
+
+  cidr_ipv6 = each.value.cidr
+
+  ip_protocol = "tcp"
+  from_port   = each.value.port
+  to_port     = each.value.port
 }
