@@ -25,10 +25,15 @@ locals {
   name  = var.name == "" ? "CloudflareIngress-${var.vpc_id}" : var.name
   ports = toset(length(var.additional_ports) == 0 ? ["443"] : concat(["443"], var.additional_ports))
 
+  ranges = {
+    ipv4 = lookup(data.cloudflare_ip_ranges.cloudflare, "ipv4_cidr_blocks", data.cloudflare_ip_ranges.cloudflare.ipv4_cidrs)
+    ipv6 = lookup(data.cloudflare_ip_ranges.cloudflare, "ipv6_cidr_blocks", data.cloudflare_ip_ranges.cloudflare.ipv6_cidrs)
+  }
+
   ipv4_rules = merge(flatten(concat(
     [
       for port in local.ports : [
-        for cidr in data.cloudflare_ip_ranges.cloudflare.ipv4_cidr_blocks : [
+        for cidr in local.ranges.ipv4 : [
           {
             "${cidr}:${port}" = {
               port        = port
@@ -44,7 +49,7 @@ locals {
   ipv6_rules = merge(flatten(concat(
     [
       for port in local.ports : [
-        for cidr in data.cloudflare_ip_ranges.cloudflare.ipv6_cidr_blocks : [
+        for cidr in local.ranges.ipv6 : [
           {
             "${cidr}:${port}" = {
               port        = port
