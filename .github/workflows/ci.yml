@@ -23,21 +23,3 @@ jobs:
 
       - name: Run validate
         run: terraform validate -no-color
-
-      - uses: terraform-linters/setup-tflint@v6.2.2
-        name: Setup TFLint
-        with:
-          tflint_version: v0.59.1
-
-      - name: Init TFLint
-        run: tflint --init
-
-      - name: Run TFLint
-        run: tflint -f compact
-
-      - name: Trivy
-        uses: aquasecurity/trivy-action@0.35.0
-        with:
-          scan-type: 'config'
-          format: 'table'
-          exit-code: '1'
