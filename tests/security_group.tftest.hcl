@@ -32,28 +32,28 @@ run "defaults" {
   command = plan
 
   assert {
-    condition     = length(aws_vpc_security_group_ingress_rule.ingress_tcp_ipv4) == 3
+    condition     = length(aws_vpc_security_group_ingress_rule.tcp_ipv4) == 3
     error_message = "Expected 3 IPv4 ingress rules (one per fixture CIDR) with default additional_ports"
   }
 
   assert {
-    condition     = length(aws_vpc_security_group_ingress_rule.ingress_tcp_ipv6) == 2
+    condition     = length(aws_vpc_security_group_ingress_rule.tcp_ipv6) == 2
     error_message = "Expected 2 IPv6 ingress rules (one per fixture CIDR) with default additional_ports"
   }
 
   assert {
-    condition     = contains(keys(aws_vpc_security_group_ingress_rule.ingress_tcp_ipv4), "192.0.2.0/24:443")
+    condition     = contains(keys(aws_vpc_security_group_ingress_rule.tcp_ipv4), "192.0.2.0/24:443")
     error_message = "Expected IPv4 rule keyed \"192.0.2.0/24:443\" to exist"
   }
 
   assert {
-    condition     = contains(keys(aws_vpc_security_group_ingress_rule.ingress_tcp_ipv6), "2001:db8::/32:443")
+    condition     = contains(keys(aws_vpc_security_group_ingress_rule.tcp_ipv6), "2001:db8::/32:443")
     error_message = "Expected IPv6 rule keyed \"2001:db8::/32:443\" to exist -- guards against splitting a key on \":\""
   }
 
   assert {
     condition = alltrue([
-      for r in aws_vpc_security_group_ingress_rule.ingress_tcp_ipv4 :
+      for r in aws_vpc_security_group_ingress_rule.tcp_ipv4 :
       r.ip_protocol == "tcp" && r.from_port == 443 && r.to_port == 443
     ])
     error_message = "Every default IPv4 rule must be tcp/443"
@@ -61,14 +61,14 @@ run "defaults" {
 
   assert {
     condition = alltrue([
-      for r in aws_vpc_security_group_ingress_rule.ingress_tcp_ipv6 :
+      for r in aws_vpc_security_group_ingress_rule.tcp_ipv6 :
       r.ip_protocol == "tcp" && r.from_port == 443 && r.to_port == 443
     ])
     error_message = "Every default IPv6 rule must be tcp/443"
   }
 
   assert {
-    condition     = aws_vpc_security_group_ingress_rule.ingress_tcp_ipv4["192.0.2.0/24:443"].description == "Allow ingress from Cloudflare (192.0.2.0/24) on port 443"
+    condition     = aws_vpc_security_group_ingress_rule.tcp_ipv4["192.0.2.0/24:443"].description == "Allow ingress from Cloudflare (192.0.2.0/24) on port 443"
     error_message = "Rule description text changed -- this is a silent rewrite of all ~22 rules for every existing user"
   }
 }
@@ -81,22 +81,22 @@ run "additional_ports_regression" {
   }
 
   assert {
-    condition     = length(aws_vpc_security_group_ingress_rule.ingress_tcp_ipv4) == 9
+    condition     = length(aws_vpc_security_group_ingress_rule.tcp_ipv4) == 9
     error_message = "Expected 9 IPv4 ingress rules (3 CIDRs x 3 ports)"
   }
 
   assert {
-    condition     = length(aws_vpc_security_group_ingress_rule.ingress_tcp_ipv6) == 6
+    condition     = length(aws_vpc_security_group_ingress_rule.tcp_ipv6) == 6
     error_message = "Expected 6 IPv6 ingress rules (2 CIDRs x 3 ports)"
   }
 
   assert {
-    condition     = length([for k in keys(aws_vpc_security_group_ingress_rule.ingress_tcp_ipv4) : k if endswith(k, ":443")]) == 3
+    condition     = length([for k in keys(aws_vpc_security_group_ingress_rule.tcp_ipv4) : k if endswith(k, ":443")]) == 3
     error_message = "Regression for bug 1: expected exactly 3 IPv4 rules on port 443 (one per CIDR) -- additional_ports must not remove port 443"
   }
 
   assert {
-    condition     = toset([for r in aws_vpc_security_group_ingress_rule.ingress_tcp_ipv4 : r.from_port]) == toset([443, 8080, 8443])
+    condition     = toset([for r in aws_vpc_security_group_ingress_rule.tcp_ipv4 : r.from_port]) == toset([443, 8080, 8443])
     error_message = "Regression for bug 1: expected from_port set {443, 8080, 8443}"
   }
 }
@@ -109,7 +109,7 @@ run "additional_ports_duplicate_443" {
   }
 
   assert {
-    condition     = length(aws_vpc_security_group_ingress_rule.ingress_tcp_ipv4) == 3
+    condition     = length(aws_vpc_security_group_ingress_rule.tcp_ipv4) == 3
     error_message = "toset() must de-dupe a caller-supplied 443 in additional_ports, not error or double the rule count"
   }
 }
@@ -157,15 +157,54 @@ run "tags_propagate" {
 
   assert {
     condition = alltrue([
-      for r in aws_vpc_security_group_ingress_rule.ingress_tcp_ipv4 : r.tags["Team"] == "engineering"
+      for r in aws_vpc_security_group_ingress_rule.tcp_ipv4 : r.tags["Team"] == "engineering"
     ])
     error_message = "var.tags must reach every IPv4 ingress rule"
   }
 
   assert {
     condition = alltrue([
-      for r in aws_vpc_security_group_ingress_rule.ingress_tcp_ipv6 : r.tags["Team"] == "engineering"
+      for r in aws_vpc_security_group_ingress_rule.tcp_ipv6 : r.tags["Team"] == "engineering"
     ])
     error_message = "var.tags must reach every IPv6 ingress rule"
+  }
+}
+
+run "name_tag_precedence" {
+  command = plan
+
+  variables {
+    tags = {
+      Name = "not-this"
+    }
+  }
+
+  assert {
+    condition     = aws_security_group.this.tags["Name"] == "CloudflareIngress-vpc-0a1b2c3d4e5f6a7b8"
+    error_message = "The module's computed Name tag must win over a caller-supplied Name in var.tags"
+  }
+}
+
+run "outputs" {
+  command = apply
+
+  assert {
+    condition     = output.security_group_id != null && output.security_group_id != ""
+    error_message = "security_group_id output must be populated"
+  }
+
+  assert {
+    condition     = output.security_group.id == output.security_group_id
+    error_message = "security_group.id and security_group_id must agree"
+  }
+
+  assert {
+    condition     = output.security_group_name == aws_security_group.this.name
+    error_message = "security_group_name output must match the security group's name"
+  }
+
+  assert {
+    condition     = length(output.security_group_rule_ids) == 5
+    error_message = "Expected 5 rule IDs (3 IPv4 + 2 IPv6 fixture CIDRs on the default port 443)"
   }
 }
