@@ -2,12 +2,24 @@
 version: 2
 
 updates:
- - package-ecosystem: "terraform"
-   directory: "/"
-   schedule:
-     interval: "daily"
+  - package-ecosystem: "terraform"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 3
+    labels:
+      - "dependencies"
+      - "terraform"
+    open-pull-requests-limit: 10
 
- - package-ecosystem: "github-actions"
-   directory: "/"
-   schedule:
-     interval: "daily"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 3
+    labels:
+      - "dependencies"
+      - "actions"
+    open-pull-requests-limit: 10
