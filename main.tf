@@ -1,1 +1,1 @@
-# File intentionally left blank
+data "cloudflare_ip_ranges" "this" {}

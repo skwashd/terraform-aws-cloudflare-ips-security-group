@@ -1,6 +1,6 @@
 variable "additional_ports" {
   type        = list(number)
-  description = "Any additional tcp ports that should be addred to the egress rules"
+  description = "Additional TCP ports to allow ingress on, in addition to 443"
   default     = []
 }
 
@@ -19,47 +19,4 @@ variable "tags" {
 variable "vpc_id" {
   type        = string
   description = "The ID of the VPC to place the security group within"
-}
-
-locals {
-  name  = var.name == "" ? "CloudflareIngress-${var.vpc_id}" : var.name
-  ports = toset(length(var.additional_ports) == 0 ? ["443"] : concat(["443"], var.additional_ports))
-
-  ranges = {
-    ipv4 = lookup(data.cloudflare_ip_ranges.cloudflare, "ipv4_cidr_blocks", data.cloudflare_ip_ranges.cloudflare.ipv4_cidrs)
-    ipv6 = lookup(data.cloudflare_ip_ranges.cloudflare, "ipv6_cidr_blocks", data.cloudflare_ip_ranges.cloudflare.ipv6_cidrs)
-  }
-
-  ipv4_rules = merge(flatten(concat(
-    [
-      for port in local.ports : [
-        for cidr in local.ranges.ipv4 : [
-          {
-            "${cidr}:${port}" = {
-              port        = port
-              cidr        = cidr
-              description = "Allow ingress from Cloudflare (${cidr}) on port ${port}"
-            }
-          }
-        ]
-      ]
-    ]
-  )[0])...)
-
-  ipv6_rules = merge(flatten(concat(
-    [
-      for port in local.ports : [
-        for cidr in local.ranges.ipv6 : [
-          {
-            "${cidr}:${port}" = {
-              port        = port
-              cidr        = cidr
-              description = "Allow ingress from Cloudflare (${cidr}) on port ${port}"
-            }
-          }
-        ]
-      ]
-    ]
-  )[0])...)
-
 }
