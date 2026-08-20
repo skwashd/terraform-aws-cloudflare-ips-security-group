@@ -39,19 +39,24 @@ resource "aws_security_group" "this" {
   description = "Cloudflare Source IPs for ${var.vpc_id}"
   vpc_id      = var.vpc_id
 
-  tags = merge(
-    {
-      Name = local.name
-    },
-    var.tags
-  )
+  tags = merge(var.tags, { Name = local.name })
 
   lifecycle {
     create_before_destroy = true
   }
 }
 
-resource "aws_vpc_security_group_ingress_rule" "ingress_tcp_ipv4" {
+check "rule_quota" {
+  assert {
+    condition = length(local.ipv4_rules) + length(local.ipv6_rules) <= 60
+    error_message = format(
+      "This configuration creates %d rules, which exceeds the default AWS quota of 60 rules per security group. Cloudflare publishes ~22 ranges, so each port costs ~22 rules. Request a quota increase or reduce additional_ports.",
+      length(local.ipv4_rules) + length(local.ipv6_rules)
+    )
+  }
+}
+
+resource "aws_vpc_security_group_ingress_rule" "tcp_ipv4" {
   for_each = local.ipv4_rules
 
   security_group_id = aws_security_group.this.id
@@ -66,7 +71,7 @@ resource "aws_vpc_security_group_ingress_rule" "ingress_tcp_ipv4" {
   tags = merge(var.tags, { Name = "${local.name}-${each.key}" })
 }
 
-resource "aws_vpc_security_group_ingress_rule" "ingress_tcp_ipv6" {
+resource "aws_vpc_security_group_ingress_rule" "tcp_ipv6" {
   for_each = local.ipv6_rules
 
   security_group_id = aws_security_group.this.id

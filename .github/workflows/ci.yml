@@ -80,12 +80,10 @@ jobs:
           terraform_version: "~1.11"
           terraform_wrapper: false
 
-      # Floors leg pins the versions this module actually works on, not the
-      # (unsatisfiable) >= 4.0.0 cloudflare floor still declared in
-      # versions.tf -- that gets corrected in the 2.0.0 release. The
-      # cloudflare floor here is 5.1.0, not the declared-range minimum of
-      # 5.0.0: the cloudflare_ip_ranges data source this module depends on
-      # was not added until 5.1.0.
+      # Floors leg pins the versions declared as the minimum in versions.tf:
+      # aws >= 6.0.0, cloudflare >= 5.1.0. The cloudflare floor is 5.1.0, not
+      # 5.0.0, because the cloudflare_ip_ranges data source this module
+      # depends on was not added until 5.1.0.
       #
       # Ceiling versions go stale as new releases land within the declared
       # ranges (aws < 7.0.0, cloudflare < 6.0.0). Dependabot does not track
@@ -94,13 +92,13 @@ jobs:
       # The "latest" leg has no override: terraform init resolves whatever is
       # newest within versions.tf's declared ranges, same as a fresh install
       # with no committed lockfile. This is the leg that would have caught
-      # the unsatisfiable cloudflare floor.
+      # the unsatisfiable cloudflare floor pre-2.0.0.
       - name: Pin provider versions (${{ matrix.leg }})
         if: matrix.leg != 'latest'
         run: |
           case "${{ matrix.leg }}" in
             floors)
-              aws_version="5.0.0"
+              aws_version="6.0.0"
               cloudflare_version="5.1.0"
               ;;
             ceilings)
